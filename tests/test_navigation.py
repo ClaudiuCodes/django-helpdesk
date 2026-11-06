@@ -23,6 +23,25 @@ class KBDisabledTestCase(TestCase):
             helpdesk_settings.HELPDESK_KB_ENABLED = True
             reload_urlconf()
 
+    def test_urlconf_imports_from_scratch(self):
+        """helpdesk.urls must import cleanly when the knowledge base is disabled.
+
+        reload() keeps the module namespace, so the ``kb`` name imported by an
+        earlier, KB-enabled import masks the failure. A fresh import is what a
+        project with HELPDESK_KB_ENABLED = False does, and it used to raise
+        NameError (issue #1502).
+        """
+        from importlib import import_module
+
+        from django.urls import NoReverseMatch
+
+        sys.modules.pop("helpdesk.urls", None)
+        try:
+            import_module("helpdesk.urls")
+        finally:
+            reload_urlconf()
+        self.assertRaises(NoReverseMatch, reverse, "helpdesk:kb_index")
+
     def test_navigation(self):
         """Test proper rendering of navigation.html by accessing the dashboard"""
         from django.urls import NoReverseMatch

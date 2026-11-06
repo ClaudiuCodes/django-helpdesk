@@ -33,9 +33,6 @@ from helpdesk.views.auth import (
     password_reset_done,
 )
 
-if helpdesk_settings.HELPDESK_KB_ENABLED:
-    from helpdesk.views import kb
-
 # Importing the module is the side effect: that is what registers the
 # @shared_task it defines, for projects that do not rely on Celery's own
 # autodiscover_tasks(). Celery is an optional extra, so its absence is not an
@@ -240,14 +237,17 @@ urlpatterns += [
 ]
 
 
-KNOWLEDGE_BASE_PATTERNS = [
-    path("kb/", kb.index, name="kb_index"),
-    path("kb/<slug:slug>/", kb.category, name="kb_category"),
-    path("kb_iframe/<slug:slug>/", kb.category_iframe, name="kb_category_iframe"),
-    path("kb/<int:item_id>/vote/<str:vote>/", kb.vote, name="kb_vote"),
-]
-
 if helpdesk_settings.HELPDESK_KB_ENABLED:
+    # Import and patterns live together: the module must stay importable
+    # when the knowledge base is disabled.
+    from helpdesk.views import kb
+
+    KNOWLEDGE_BASE_PATTERNS = [
+        path("kb/", kb.index, name="kb_index"),
+        path("kb/<slug:slug>/", kb.category, name="kb_category"),
+        path("kb_iframe/<slug:slug>/", kb.category_iframe, name="kb_category_iframe"),
+        path("kb/<int:item_id>/vote/<str:vote>/", kb.vote, name="kb_vote"),
+    ]
     urlpatterns += KNOWLEDGE_BASE_PATTERNS
 
 
